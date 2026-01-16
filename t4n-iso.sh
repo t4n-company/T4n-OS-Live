@@ -6,7 +6,7 @@ set -eu
 
 PROGNAME=$(basename "$0")
 ARCH=$(uname -m)
-IMAGES="base server xfce bspwm kde river"
+IMAGES="base"
 TRIPLET=
 REPO=
 DATE=$(date -u +%Y%m%d)
@@ -89,8 +89,17 @@ setup_pipewire() {
 }
 
 include_common_cli() {
+    mkdir -p "$INCLUDEDIR"/etc
+    mkdir -p "$INCLUDEDIR"/etc/default
+    mkdir -p "$INCLUDEDIR"/etc/runit
+
     cp ./common/os-release "$INCLUDEDIR"/etc/
     cp ./common/grub "$INCLUDEDIR"/etc/default/
+    cp ./common/.bashrc "$INCLUDEDIR"/etc/skel/
+    
+    cp -r ./common/runit/* "$INCLUDEDIR"/etc/runit/
+
+    sudo chsh -s /bin/bash root
 }
 
 include_common_gui() {
@@ -115,57 +124,57 @@ include_common_gui() {
 	cp ./common/.Xresources "$INCLUDEDIR"/etc/skel/
 }
 
-include_polybar() {
-    PKGS="$PKGS polybar cbatticon network-manager-applet redshift-gtk volumeicon"
-	mkdir -p "$INCLUDEDIR"/etc/skel/.config
-	mkdir -p "$INCLUDEDIR"/etc/skel/.local/share
-	cp -r ./common/polybar "$INCLUDEDIR"/etc/skel/.config/
-	cp -r ./common/fonts "$INCLUDEDIR"/etc/skel/.local/share/
-}
-include_rofi() {
-    PKGS="$PKGS rofi"
-	mkdir -p "$INCLUDEDIR"/etc/skel/.config
-	mkdir -p "$INCLUDEDIR"/usr/bin
-	cp -r ./common/rofi_c/rofi "$INCLUDEDIR"/etc/skel/.config
-	cp ./common/rofi_c/rofi-power-menu "$INCLUDEDIR"/usr/bin/
-}
+#include_polybar() {
+#   PKGS="$PKGS polybar cbatticon network-manager-applet redshift-gtk volumeicon"
+#	mkdir -p "$INCLUDEDIR"/etc/skel/.config
+#	mkdir -p "$INCLUDEDIR"/etc/skel/.local/share
+#	cp -r ./common/polybar "$INCLUDEDIR"/etc/skel/.config/
+#	cp -r ./common/fonts "$INCLUDEDIR"/etc/skel/.local/share/
+#}
+#include_rofi() {
+#   PKGS="$PKGS rofi"
+#	mkdir -p "$INCLUDEDIR"/etc/skel/.config
+#	mkdir -p "$INCLUDEDIR"/usr/bin
+#	cp -r ./common/rofi_c/rofi "$INCLUDEDIR"/etc/skel/.config
+#	cp ./common/rofi_c/rofi-power-menu "$INCLUDEDIR"/usr/bin/
+#}
 
 
-include_wofi() {
-    PKGS="$PKGS wofi"
-	mkdir -p "$INCLUDEDIR"/etc/skel/.config
-	mkdir -p "$INCLUDEDIR"/usr/bin
-	cp -r ./common/wofi_c/wofi "$INCLUDEDIR"/etc/skel/.config
-	cp ./common/wofi_c/wofi-power-menu "$INCLUDEDIR"/usr/bin/
-}
+#include_wofi() {
+#   PKGS="$PKGS wofi"
+#	mkdir -p "$INCLUDEDIR"/etc/skel/.config
+#	mkdir -p "$INCLUDEDIR"/usr/bin
+#	cp -r ./common/wofi_c/wofi "$INCLUDEDIR"/etc/skel/.config
+#	cp ./common/wofi_c/wofi-power-menu "$INCLUDEDIR"/usr/bin/
+#}
 
 
-include_way() {
-    PKGS="$PKGS cliphist network-manager-applet nwg-look nwg-launchers pavucontrol SwayNotificationCenter Waybar wlsunset xorg-server-xwayland xwayland-satellite"
-	cp ./common/wswap-way "$INCLUDEDIR"/usr/bin/
-	mkdir -p "$INCLUDEDIR"/etc/skel/.config
-	cp -r ./common/waybar "$INCLUDEDIR"/etc/skel/.config/
-}
-include_x11() {
-    PKGS="$PKGS dunst redshift scrot slock st transset xautolock xcompmgr"
-	cp ./common/wswap-X "$INCLUDEDIR"/usr/bin/
-}
+#include_way() {
+#   PKGS="$PKGS cliphist network-manager-applet nwg-look nwg-launchers pavucontrol SwayNotificationCenter Waybar wlsunset xorg-server-xwayland xwayland-satellite"
+#	cp ./common/wswap-way "$INCLUDEDIR"/usr/bin/
+#	mkdir -p "$INCLUDEDIR"/etc/skel/.config
+#	cp -r ./common/waybar "$INCLUDEDIR"/etc/skel/.config/
+#}
+#include_x11() {
+#    PKGS="$PKGS dunst redshift scrot slock st transset xautolock xcompmgr"
+#	cp ./common/wswap-X "$INCLUDEDIR"/usr/bin/
+#}
 
-include_base
-include_server
+include_base(){}
+#include_server() {}
 
-include_xfce() {
-	mkdir -p "$INCLUDEDIR"/usr/share/backgrounds/xfce
-	cp ./common/Wallpaper/background3.png "$INCLUDEDIR"/usr/share/backgrounds/xfce/
-}
+#include_xfce() {
+#	mkdir -p "$INCLUDEDIR"/usr/share/backgrounds/xfce
+#	cp ./common/Wallpaper/background3.png "$INCLUDEDIR"/usr/share/backgrounds/xfce/
+#}
 
-include_bspwm
-include_kde
+#include_bspwm
+#include_kde
 
-include_river() {
-	mkdir -p "$INCLUDEDIR"/usr/bin
-	cp ./common/screenlock "$INCLUDEDIR"/usr/bin/
-}
+#include_river() {
+#	mkdir -p "$INCLUDEDIR"/usr/bin
+#	cp ./common/screenlock "$INCLUDEDIR"/usr/bin/
+#}
 
 build_variant() {
     variant="$1"
@@ -179,7 +188,7 @@ build_variant() {
     case "$ARCH" in
         x86_64*|i686*)
             GRUB_PKGS="grub-i386-efi grub-x86_64-efi"
-            GFX_PKGS="xorg-video-drivers xf86-video-intel"
+            GFX_PKGS="xorg-video-drivers xf86-video-intel xf86-video-amdgpu xf86-video-ati"
             GFX_WL_PKGS="mesa-dri"
             WANT_INSTALLER=yes
             TARGET_ARCH="$ARCH"
@@ -205,26 +214,36 @@ build_variant() {
 
     A11Y_PKGS="espeakup void-live-audio brltty"
     PKGS="dialog cryptsetup lvm2 mdadm void-docs-browse xtools-minimal xmirror chrony tmux $A11Y_PKGS $GRUB_PKGS"
+    FILE_PKGS="tar xz gzip zstd zip unzip 7zip p7zip"
     FONTS="font-misc-misc terminus-font dejavu-fonts-ttf"
     WAYLAND_PKGS="$GFX_WL_PKGS $FONTS orca"
-    XORG_PKGS="$GFX_PKGS $FONTS xorg-minimal xorg-input-drivers setxkbmap xauth orca"
+    XORG_PKGS="$GFX_PKGS $FONTS xorg-fonts xorg-server xorg-apps xorg-minimal xorg-input-drivers setxkbmap xauth orca"
     SERVICES="sshd chronyd"
 
     LIGHTDM_SESSION=''
 
     case $variant in
         base)
-            SERVICES="$SERVICES dbus NetworkManager"
+            SERVICES="$SERVICES dhcpcd wpa_supplicant acpid"
+        ;;
+        base-x11)
+            PKGS="$PKGS $XORG_PKGS $FILE_PKGS tree eza exa"
+            CLI=yes
+
+            SERVICES="$SERVICES dbus NetworkManager acpid"
+        ;;
+        base-wayland)
+            echo "on Going"
         ;;
         server)
             # SERVICES="$SERVICES dhcpcd wpa_supplicant acpid"
             echo "on Going"
         ;;
-        enlightenment)
-            PKGS="$PKGS $XORG_PKGS lightdm lightdm-gtk-greeter enlightenment terminology udisks2 firefox"
-            SERVICES="$SERVICES acpid dhcpcd wpa_supplicant lightdm dbus polkitd"
-            LIGHTDM_SESSION=enlightenment
-        ;;
+        #enlightenment)
+            #PKGS="$PKGS $XORG_PKGS lightdm lightdm-gtk-greeter enlightenment terminology udisks2 firefox"
+            #SERVICES="$SERVICES acpid dhcpcd wpa_supplicant lightdm dbus polkitd"
+            #LIGHTDM_SESSION=enlightenment
+        #;;
         xfce)
             # PKGS="$PKGS $XORG_PKGS lightdm lightdm-gtk-greeter xfce4 gnome-themes-standard gnome-keyring network-manager-applet gvfs-afc gvfs-mtp gvfs-smb udisks2 firefox xfce4-pulseaudio-plugin"
             # SERVICES="$SERVICES dbus lightdm NetworkManager polkitd"
@@ -290,6 +309,10 @@ indicators = ~host;~spacer;~clock;~spacer;~layout;~session;~a11y;~power
 EOF
     fi
 
+    if [ "$CLI" = yes ]; then
+        include_common_cli
+    fi
+
     if [ "$WANT_INSTALLER" = yes ]; then
         include_installer
     else
@@ -298,9 +321,14 @@ EOF
         chmod 755 "$INCLUDEDIR"/usr/bin/void-installer
     fi
 
-    if [ "$variant" != base ]; then
-        setup_pipewire
-    fi
+    case "$variant" in
+        base|base-x11|base-wayland|server)
+            ;;
+        *)
+            setup_pipewire
+            ;;
+    esac
+
 
     ./mklive.sh -a "$TARGET_ARCH" -o "$IMG" -p "$PKGS" -S "$SERVICES" -I "$INCLUDEDIR" \
         ${KERNEL_PKG:+-v $KERNEL_PKG} ${REPO} "$@"

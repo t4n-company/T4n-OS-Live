@@ -1,0 +1,45 @@
+name: Build T4n ISO (Dev)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-iso:
+    runs-on: ubuntu-latest
+
+    container:
+      image: ghcr.io/void-linux/void-linux:glibc
+      options: --privileged
+      volumes:
+        - /dev:/dev
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          xbps-install -Sy xbps bash coreutils \
+            grub syslinux dracut xorriso \
+            dosfstools e2fsprogs squashfs-tools
+
+      - name: Permission check
+        run: |
+          chmod +x *.sh
+
+      - name: Build ISO
+        env:
+          T4N_LIBC: glibc
+          T4N_VARIANT: base
+          T4N_ARCH: x86_64
+        run: |
+          ./t4n-iso.sh
+
+      - name: Upload ISO artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: t4n-iso-dev-x86_64
+          path: "*.iso"
+
