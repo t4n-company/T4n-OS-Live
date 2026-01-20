@@ -1,8 +1,11 @@
 #!/bin/bash
 #
 #-
+# SPDX-License-Identifier: BSD-2-Clause
+#
+# Based on mklive.sh from Void Linux
 # Copyright (c) 2009-2015 Juan Romero Pardines.
-# Copyright (c) 2025 t4n-company
+# Copyright (c) 2026 T4n Company
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -73,43 +76,42 @@ error_out() {
 
 usage() {
 	cat <<-EOH
-	Penggunaan: t4n-live.sh [opsi]
+	Usage: $PROGNAME [options]
 
-    Menghasilkan ISO live T4n OS dasar.
-    ISO dapat ditulis ke CD/DVD atau USB.
+	Generates a basic live ISO image of T4n OS. This ISO image can be written
+	to a CD/DVD-ROM or any USB stick.
 
-    [!] Untuk Menghasil File ISO Lebih Lengkap, Gunakan t4n-iso.sh
-    [+] Create by Gh0sT4n(https://github.com/gh0st4n)
+	To generate a more complete live ISO image, use mkiso.sh.
 
 	OPTIONS
-     -a <arch>          Tentukan XBPS_ARCH dalam ISO image
-	 -b <system-pkg>    Tentukan paket dasar alternatif (default: base-system)
-	 -r <repo>          Menggunakan repository XBPS tertentu (bisa lebih dari satu)
-	 -c <cachedir>      Gunakan direktori cache XBPS ini (default: ./xbps-cachedir-<arch>)
-	 -H <host_cachedir> Gunakan direktori cache XBPS Host ini (default: ./xbps-cachedir-<host_arch>)
-     -k <keymap>        Keymap default (default: us)
-     -l <locale>        Locale default (default: en_US.UTF-8)
+	 -a <arch>          Set XBPS_ARCH in the ISO image
+	 -b <system-pkg>    Set an alternative base package (default: base-system)
+	 -r <repo>          Use this XBPS repository. May be specified multiple times
+	 -c <cachedir>      Use this XBPS cache directory (default: ./xbps-cachedir-<arch>)
+	 -H <host_cachedir> Use this Host XBPS cache directory (default: ./xbps-cachedir-<host_arch>)
+	 -k <keymap>        Default keymap to use (default: us)
+	 -l <locale>        Default locale to use (default: en_US.UTF-8)
 	 -i <lz4|gzip|bzip2|xz>
-	                    Tipe kompresi untuk image initramfs (default: xz)
-	 -s <gzip|lzo|xz>   Tipe kompresi untuk image squashfs (default: xz)
-	 -o <file>          Nama file output image ISO (default: automatic)
-	 -p "<pkg> ..."     Menambahkan paket dalam image ISO
-	 -g "<pkg> ..."     Paket yang diabaikan saat proses build ISO
-	 -I <includedir>    Menyertakan struktur direktori di path tertentu ke dalam ROOTFS
-	 -S "<service> ..." mengaktifkan service di image ISO
-	 -e <shell>         Shell default pengguna root (harus berupa jalur absolut).
-                        Atur argumen kernel live.shell untuk mengubah shell default menjadi anon.
-	 -C "<arg> ..."     Menambahkan argumen tambahan ke command line kernel
+	                    Compression type for the initramfs image (default: xz)
+	 -s <gzip|lzo|xz>   Compression type for the squashfs image (default: xz)
+	 -o <file>          Output file name for the ISO image (default: automatic)
+	 -p "<pkg> ..."     Install additional packages in the ISO image
+	 -g "<pkg> ..."     Ignore packages when building the ISO image
+	 -I <includedir>    Include directory structure under given path in the ROOTFS
+	 -S "<service> ..." Enable services in the ISO image
+	 -e <shell>         Default shell of the root user (must be absolute path).
+	                    Set the live.shell kernel argument to change the default shell of anon.
+	 -C "<arg> ..."     Add additional kernel command line arguments
 	 -P "<platform> ..."
-	                    Coming Soon
-     -T <title>         Ubah judul bootloader (default: T4n OS)
-	 -v linux<version>  Instal versi Linux kustom pada citra ISO (default: linux metapaket).
-                        Juga menerima metapaket linux (linux-mainline, linux-lts).
-	 -x <script>        Jalur ke skrip postsetup yang akan dijalankan sebelum menghasilkan initramfs
-                            (menerima jalur ke ROOTFS sebagai argumen)
-	 -K                 Jangan hapus builddir
-	 -h                 Tampilkan Bantuan dan Keluar
-	 -V                 Tampilkan Versi dan Keluar
+	                    Platforms to enable for aarch64 EFI ISO images (available: pinebookpro, x13s)
+	 -T <title>         Modify the bootloader title (default: T4n OS)
+	 -v linux<version>  Install a custom Linux version on ISO image (default: linux metapackage).
+	                    Also accepts linux metapackages (linux-mainline, linux-lts).
+	 -x <script>        Path to a postsetup script to run before generating the initramfs
+                            (receives the path to the ROOTFS as an argument)
+	 -K                 Do not remove builddir
+	 -h                 Show this help and exit
+	 -V                 Show version and exit
 	EOH
 }
 
@@ -532,7 +534,7 @@ while getopts "a:b:r:H:c:C:T:Kk:l:i:I:S:e:s:o:p:g:v:P:x:Vh" opt; do
 	esac
 done
 shift $((OPTIND - 1))
-XBPS_REPOSITORY="$XBPS_REPOSITORY --repository=https://repo-default.voidlinux.org/current --repository=https://repo-default.voidlinux.org/current/musl --repository=https://repo-default.voidlinux.org/current/aarch64"
+XBPS_REPOSITORY="$XBPS_REPOSITORY --repository=https://repo-fi.voidlinux.org/current --repository=https://repo-fi.voidlinux.org/current/musl --repository=https://repo-fi.voidlinux.org//current/aarch64"
 
 # Configure dracut to use overlayfs for the writable overlay.
 BOOT_CMDLINE="$BOOT_CMDLINE rd.live.overlay.overlayfs=1 "
@@ -667,7 +669,7 @@ if [ "$?" -ne "0" ]; then
     die "Failed to find kernel package version"
 fi
 
-: ${OUTPUT_FILE="void-live-${TARGET_ARCH}-${KERNELVERSION}-$(date -u +%Y%m%d).iso"}
+: ${OUTPUT_FILE="t4n-os-live-${TARGET_ARCH}-${KERNELVERSION}-$(date -u +%Y%m%d).iso"}
 
 print_step "Installing software to generate the image: ${REQUIRED_PKGS[*]} ..."
 install_prereqs "${REQUIRED_PKGS[@]}"
